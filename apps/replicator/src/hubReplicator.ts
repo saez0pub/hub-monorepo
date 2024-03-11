@@ -33,10 +33,6 @@ export class HubReplicator {
     ]);
     this.lastHubEventIdKey = `hub:${this.hubAddress}:last-hub-event-id`;
 
-    this.eventsSubscriber.on("event", async (hubEvent) => {
-      this.processHubEvent(hubEvent);
-      await this.redis.set(this.lastHubEventIdKey, hubEvent.id);
-    });
   }
 
   public async start() {
@@ -144,7 +140,7 @@ export class HubReplicator {
     this.log.info(`Enqueuing jobs for backfilling FID registrations for ${maxFid} FIDs...`);
 
     const jobs: Parameters<typeof BackfillFidRegistration.enqueueBulk>[0] = [];
-    for (let fid = maxFid; fid > 0; fid--) {
+    for (const fid of [329826,307332,261754,228837]) {
       const alreadyBackfilled = await this.redis.sismember("backfilled-registrations", fid);
       if (alreadyBackfilled) continue;
       jobs.push({
@@ -158,7 +154,7 @@ export class HubReplicator {
     const alreadyBackfilled = await this.redis.scard("backfilled-registrations");
     for (;;) {
       const dataBackfilled = await this.redis.scard("backfilled-registrations");
-      if (dataBackfilled >= maxFid) break;
+      if (dataBackfilled >= 4) break;
 
       const elapsedMs = Date.now() - startTime;
       const millisRemaining = Math.ceil(
@@ -181,7 +177,7 @@ export class HubReplicator {
 
   private async enqueueBackfillJobs({ maxFid }: { maxFid: number }) {
     this.log.info(`Enqueuing jobs for backfilling data for ${maxFid} FIDs...`);
-    for (let fid = 1; fid <= maxFid; fid++) {
+    for (const fid of [228837,261754,307332,329826]) {
       // Enqueue one at a time so we allow other job types to be enqueued/processed.
       // This spreads load better since we write to multiple tables in parallel instead
       // of a single table. This job will kick off other jobs for fetching different data.
@@ -195,7 +191,7 @@ export class HubReplicator {
 
     for (;;) {
       const dataBackfilled = await this.redis.scard("backfilled-other-onchain-events");
-      if (dataBackfilled >= maxFid) break;
+      if (dataBackfilled >= 4) break;
 
       const elapsedMs = Date.now() - startTime;
       const millisRemaining = Math.ceil(

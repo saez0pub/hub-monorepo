@@ -10,6 +10,7 @@ export const BackfillFidReactions = registerJob({
   run: async ({ fid }: { fid: number }, { db, log, redis, hub }) => {
     for await (const messages of getReactionsByFidInBatchesOf(hub, fid, MAX_PAGE_SIZE)) {
       for (const message of messages) {
+        log.debug(`BackfillingFidReactions for fid ${fid} message ${Buffer.from(message.hash).toString('hex')}`)
         await executeTx(db, async (trx) => {
           await mergeMessage(message, trx, log, redis);
         });

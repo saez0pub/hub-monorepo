@@ -128,21 +128,6 @@ export const up = async (db: Kysely<any>) => {
     .addColumn("chainEventId", "uuid", (col) => col.notNull())
     .addColumn("custodyAddress", "bytea", (col) => col.notNull())
     .addColumn("recoveryAddress", "bytea", (col) => col.notNull())
-    .$call((qb) =>
-      PARTITIONS
-        ? qb
-            .addForeignKeyConstraint(
-              "fids_chain_event_id_fid_foreign",
-              ["chainEventId", "fid"],
-              "chainEvents",
-              ["id", "fid"],
-              (cb) => cb.onDelete("cascade"),
-            )
-            .modifyEnd(sql`PARTITION BY HASH (fid)`)
-        : qb.addForeignKeyConstraint("fids_chain_event_id_foreign", ["chainEventId"], "chainEvents", ["id"], (cb) =>
-            cb.onDelete("cascade"),
-          ),
-    )
     .execute();
 
   await createPartitions(db, "fids", PARTITIONS);
@@ -164,45 +149,13 @@ export const up = async (db: Kysely<any>) => {
     .addColumn("key", "bytea", (col) => col.notNull())
     .addColumn("metadata", "json", (col) => col.notNull())
     .addUniqueConstraint("signers_fid_key_unique", ["fid", "key"])
-    .addForeignKeyConstraint("signers_fid_foreign", ["fid"], "fids", ["fid"], (cb) => cb.onDelete("cascade"))
-    .addForeignKeyConstraint("signers_requester_fid_foreign", ["requesterFid"], "fids", ["fid"], (cb) =>
-      cb.onDelete("cascade"),
-    )
     .$call((qb) =>
       PARTITIONS
         ? qb
             .addPrimaryKeyConstraint("signers_pkey", ["fid", "id"])
-            .addForeignKeyConstraint(
-              "signers_add_chain_event_id_foreign",
-              ["addChainEventId", "fid"],
-              "chainEvents",
-              ["id", "fid"],
-              (cb) => cb.onDelete("cascade"),
-            )
-            .addForeignKeyConstraint(
-              "signers_remove_chain_event_id_foreign",
-              ["removeChainEventId", "fid"],
-              "chainEvents",
-              ["id", "fid"],
-              (cb) => cb.onDelete("cascade"),
-            )
             .modifyEnd(sql`PARTITION BY HASH (fid)`)
         : qb
             .addPrimaryKeyConstraint("signers_pkey", ["id"])
-            .addForeignKeyConstraint(
-              "signers_add_chain_event_id_foreign",
-              ["addChainEventId"],
-              "chainEvents",
-              ["id"],
-              (cb) => cb.onDelete("cascade"),
-            )
-            .addForeignKeyConstraint(
-              "signers_remove_chain_event_id_foreign",
-              ["removeChainEventId"],
-              "chainEvents",
-              ["id"],
-              (cb) => cb.onDelete("cascade"),
-            ),
     )
     .execute();
 
@@ -226,7 +179,6 @@ export const up = async (db: Kysely<any>) => {
     .addColumn("signature", "bytea", (col) => col.notNull())
     .addColumn("owner", "bytea", (col) => col.notNull())
     .addUniqueConstraint("username_proofs_username_timestamp_unique", ["username", "timestamp"])
-    .addForeignKeyConstraint("username_proofs_fid_foreign", ["fid"], "fids", ["fid"], (cb) => cb.onDelete("cascade"))
     .execute();
 
   // FNAMES ----------------------------------------------------------------------------------------
@@ -242,7 +194,6 @@ export const up = async (db: Kysely<any>) => {
     .addColumn("username", "text", (col) => col.notNull())
     .addUniqueConstraint("fnames_fid_unique", ["fid"])
     .addUniqueConstraint("fnames_username_unique", ["username"])
-    .addForeignKeyConstraint("fnames_fid_foreign", ["fid"], "fids", ["fid"], (cb) => cb.onDelete("cascade"))
     .execute();
 
   // MESSAGES -------------------------------------------------------------------------------------
@@ -264,10 +215,6 @@ export const up = async (db: Kysely<any>) => {
     .addColumn("signer", "bytea", (col) => col.notNull())
     .addColumn("body", "json", (col) => col.notNull())
     .addColumn("raw", "bytea", (col) => col.notNull())
-    .addForeignKeyConstraint("messages_fid_foreign", ["fid"], "fids", ["fid"], (cb) => cb.onDelete("cascade"))
-    .addForeignKeyConstraint("messages_signer_fid_foreign", ["fid", "signer"], "signers", ["fid", "key"], (cb) =>
-      cb.onDelete("cascade"),
-    )
     .$call((qb) =>
       PARTITIONS
         ? qb
@@ -305,22 +252,15 @@ export const up = async (db: Kysely<any>) => {
     .addColumn("embeds", "json", (col) => col.notNull().defaultTo(sql`'[]'`))
     .addColumn("mentions", "json", (col) => col.notNull().defaultTo(sql`'[]'`))
     .addColumn("mentionsPositions", "json", (col) => col.notNull().defaultTo(sql`'[]'`))
-    .addForeignKeyConstraint("casts_fid_foreign", ["fid"], "fids", ["fid"], (cb) => cb.onDelete("cascade"))
     .$call((qb) =>
       PARTITIONS
         ? qb
             .addPrimaryKeyConstraint("casts_pkey", ["id", "fid"])
             .addUniqueConstraint("casts_hash_fid_unique", ["hash", "fid"])
-            .addForeignKeyConstraint("casts_hash_foreign", ["hash", "fid"], "messages", ["hash", "fid"], (cb) =>
-              cb.onDelete("cascade"),
-            )
             .modifyEnd(sql`PARTITION BY HASH (fid)`)
         : qb
             .addPrimaryKeyConstraint("casts_pkey", ["id"])
             .addUniqueConstraint("casts_hash_unique", ["hash"])
-            .addForeignKeyConstraint("casts_hash_foreign", ["hash"], "messages", ["hash"], (cb) =>
-              cb.onDelete("cascade"),
-            ),
     )
     .execute();
 
@@ -377,32 +317,15 @@ export const up = async (db: Kysely<any>) => {
     .addColumn("hash", "bytea", (col) => col.notNull())
     .addColumn("targetCastHash", "bytea")
     .addColumn("targetUrl", "text")
-    .addForeignKeyConstraint("reactions_fid_foreign", ["fid"], "fids", ["fid"], (cb) => cb.onDelete("cascade"))
     .$call((qb) =>
       PARTITIONS
         ? qb
             .addPrimaryKeyConstraint("reactions_pkey", ["id", "fid"])
             .addUniqueConstraint("reactions_hash_fid_unique", ["hash", "fid"])
-            .addForeignKeyConstraint("reactions_hash_foreign", ["hash", "fid"], "messages", ["hash", "fid"], (cb) =>
-              cb.onDelete("cascade"),
-            )
-            .addForeignKeyConstraint(
-              "reactions_target_hash_fid_foreign",
-              ["targetCastHash", "targetCastFid"],
-              "casts",
-              ["hash", "fid"],
-              (cb) => cb.onDelete("cascade"),
-            )
             .modifyEnd(sql`PARTITION BY HASH (fid)`)
         : qb
             .addPrimaryKeyConstraint("reactions_pkey", ["id"])
             .addUniqueConstraint("reactions_hash_unique", ["hash"])
-            .addForeignKeyConstraint("reactions_hash_foreign", ["hash"], "messages", ["hash"], (cb) =>
-              cb.onDelete("cascade"),
-            )
-            .addForeignKeyConstraint("reactions_target_hash_foreign", ["targetCastHash"], "casts", ["hash"], (cb) =>
-              cb.onDelete("cascade"),
-            ),
     )
     .execute();
 
@@ -450,8 +373,6 @@ export const up = async (db: Kysely<any>) => {
     .addColumn("displayTimestamp", "timestamptz")
     .addColumn("type", "text", (col) => col.notNull())
     .addColumn("hash", "bytea", (col) => col.notNull())
-    .addForeignKeyConstraint("links_fid_foreign", ["fid"], "fids", ["fid"], (cb) => cb.onDelete("cascade"))
-    .addForeignKeyConstraint("links_target_fid_foreign", ["targetFid"], "fids", ["fid"], (cb) => cb.onDelete("cascade"))
     .$call((qb) =>
       PARTITIONS
         ? qb
@@ -486,24 +407,13 @@ export const up = async (db: Kysely<any>) => {
     .addColumn("blockHash", "bytea", (col) => col.notNull())
     .addColumn("signature", "bytea", (col) => col.notNull())
     .addUniqueConstraint("verifications_signer_address_fid_unique", ["signerAddress", "fid"])
-    .addForeignKeyConstraint("verifications_fid_foreign", ["fid"], "fids", ["fid"], (cb) => cb.onDelete("cascade"))
     .$call((qb) =>
       PARTITIONS
         ? qb
             .addPrimaryKeyConstraint("verifications_pkey", ["id", "fid"])
-            .addForeignKeyConstraint(
-              "verifications_hash_foreign",
-              ["hash", "fid"],
-              "messages",
-              ["hash", "fid"],
-              (cb) => cb.onDelete("cascade"),
-            )
             .modifyEnd(sql`PARTITION BY HASH (fid)`)
         : qb
             .addPrimaryKeyConstraint("verifications_pkey", ["id"])
-            .addForeignKeyConstraint("verifications_hash_foreign", ["hash"], "messages", ["hash"], (cb) =>
-              cb.onDelete("cascade"),
-            ),
     )
     .execute();
 
@@ -528,26 +438,15 @@ export const up = async (db: Kysely<any>) => {
     .addColumn("hash", "bytea", (col) => col.notNull())
     .addColumn("value", "text", (col) => col.notNull())
     .addUniqueConstraint("user_data_fid_type_unique", ["fid", "type"])
-    .addForeignKeyConstraint("user_data_fid_foreign", ["fid"], "fids", ["fid"], (cb) => cb.onDelete("cascade"))
     .$call((qb) =>
       PARTITIONS
         ? qb
             .addPrimaryKeyConstraint("user_data_pkey", ["id", "fid"])
             .addUniqueConstraint("user_data_fid_hash_unique", ["fid", "hash"])
-            .addForeignKeyConstraint(
-              "user_data_hash_fid_foreign",
-              ["hash", "fid"],
-              "messages",
-              ["hash", "fid"],
-              (cb) => cb.onDelete("cascade"),
-            )
             .modifyEnd(sql`PARTITION BY HASH (fid)`)
         : qb
             .addPrimaryKeyConstraint("user_data_pkey", ["id"])
             .addUniqueConstraint("user_data_hash_unique", ["hash"])
-            .addForeignKeyConstraint("user_data_hash_foreign", ["hash"], "messages", ["hash"], (cb) =>
-              cb.onDelete("cascade"),
-            ),
     )
     .execute();
 
@@ -571,18 +470,8 @@ export const up = async (db: Kysely<any>) => {
         ? qb
             .addPrimaryKeyConstraint("storage_allocations_pkey", ["id", "fid"])
             .modifyEnd(sql`PARTITION BY HASH (fid)`)
-            .addForeignKeyConstraint(
-              "fids_chain_event_id_fid_foreign",
-              ["chainEventId", "fid"],
-              "chainEvents",
-              ["id", "fid"],
-              (cb) => cb.onDelete("cascade"),
-            )
         : qb
             .addPrimaryKeyConstraint("storage_allocations_pkey", ["id"])
-            .addForeignKeyConstraint("fids_chain_event_id_foreign", ["chainEventId"], "chainEvents", ["id"], (cb) =>
-              cb.onDelete("cascade"),
-            ),
     )
     .execute();
 
