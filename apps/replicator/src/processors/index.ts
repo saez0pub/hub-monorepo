@@ -373,7 +373,7 @@ export async function storeMessage(
         deletedAt: operation === "delete" ? now : null,
         prunedAt: operation === "prune" ? now : null,
         revokedAt: operation === "revoke" ? now : null,
-        body: JSON.stringify(convertProtobufMessageBodyToJson(message)),
+        body: JSON.stringify(convertProtobufMessageBodyToJson(message)).replace(/(?<!\\)\\u0000/g, ""),
       })
       .onConflict((oc) =>
         oc

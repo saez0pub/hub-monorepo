@@ -7,7 +7,7 @@ import {
 } from "@farcaster/hub-nodejs";
 import { Selectable, sql } from "kysely";
 import { buildAddRemoveMessageProcessor } from "../messageProcessor.js";
-import { bytesToHex, farcasterTimeToDate } from "../util.js";
+import { bytesToHex, farcasterTimeToDate, JSONValue } from "../util.js";
 import { ReactionRow, executeTakeFirst } from "../db.js";
 import { AssertionError, HubEventProcessingBlockedError } from "../error.js";
 
@@ -21,27 +21,24 @@ const { processAdd, processRemove } = buildAddRemoveMessageProcessor<
   removeMessageType: MessageType.REACTION_REMOVE,
   withConflictId(message) {
     const { targetCastId, targetUrl } = message.data.reactionBody;
-
     return ({ and, eb }) => {
-      let selector;
+      const selector: {
+        type: ReactionType;
+        targetCastId?: {
+          fid: number;
+          hash: `0x${string}`;
+        };
+        target?: string;
+      } = { type: message.data.reactionBody.type };
       if (targetCastId) {
-        selector = and([
-          // Can't use Kysely's type-safe JSON operators because the upstream hub-nodejs
-          // types don't support discriminated unions.
-          eb(sql<string>`body #>> '{targetCastId,fid}'`, "=", targetCastId.fid.toString()),
-          eb(sql<string>`body #>> '{targetCastId,hash}'`, "=", bytesToHex(targetCastId.hash)),
-        ]);
+        selector.targetCastId = { fid: targetCastId.fid, hash: bytesToHex(targetCastId.hash) };
       } else if (targetUrl) {
-        selector = eb(sql<string>`body #>> '{target}'`, "=", targetUrl);
+        selector.target = targetUrl;
       } else {
         throw new AssertionError("Neither targetCastId nor targetUrl is defined");
       }
 
-      return and([
-        eb("fid", "=", message.data.fid),
-        eb(sql<ReactionType>`body #>> '{type}'`, "=", message.data.reactionBody.type),
-        selector,
-      ]);
+      return and([eb("fid", "=", message.data.fid), eb(sql`body`, "@>", JSON.stringify(selector))]);
     };
   },
   async getDerivedRow(message, trx) {
