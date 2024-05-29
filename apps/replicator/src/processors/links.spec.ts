@@ -87,5 +87,6 @@ describe("on link event", () => {
       .where("targetFid", "=", targetFid)
       .execute();
     expect(linksResultReplay).toHaveLength(1);
+    expect(log.error).not.toHaveBeenCalled();
   });
 });

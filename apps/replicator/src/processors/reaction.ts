@@ -21,23 +21,22 @@ const { processAdd, processRemove } = buildAddRemoveMessageProcessor<
   removeMessageType: MessageType.REACTION_REMOVE,
   withConflictId(message) {
     const { targetCastId, targetUrl } = message.data.reactionBody;
+    const selector: {
+      type: ReactionType;
+      targetCastId?: {
+        fid: number;
+        hash: `0x${string}`;
+      };
+      target?: string;
+    } = { type: message.data.reactionBody.type };
+    if (targetCastId) {
+      selector.targetCastId = { fid: targetCastId.fid, hash: bytesToHex(targetCastId.hash) };
+    } else if (targetUrl) {
+      selector.target = targetUrl;
+    } else {
+      throw new AssertionError("Neither targetCastId nor targetUrl is defined");
+    }
     return ({ and, eb }) => {
-      const selector: {
-        type: ReactionType;
-        targetCastId?: {
-          fid: number;
-          hash: `0x${string}`;
-        };
-        target?: string;
-      } = { type: message.data.reactionBody.type };
-      if (targetCastId) {
-        selector.targetCastId = { fid: targetCastId.fid, hash: bytesToHex(targetCastId.hash) };
-      } else if (targetUrl) {
-        selector.target = targetUrl;
-      } else {
-        throw new AssertionError("Neither targetCastId nor targetUrl is defined");
-      }
-
       return and([eb("fid", "=", message.data.fid), eb(sql`body`, "@>", JSON.stringify(selector))]);
     };
   },

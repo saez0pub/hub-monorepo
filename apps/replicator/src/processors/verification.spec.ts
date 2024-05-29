@@ -116,5 +116,6 @@ describe("on verification event", () => {
       .where("signerAddress", "=", ethVerificationAdd.address)
       .execute();
     expect(derivedResultReplay).toHaveLength(1);
+    expect(log.error).not.toHaveBeenCalled();
   });
 });

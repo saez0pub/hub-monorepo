@@ -110,5 +110,6 @@ describe("on verification event", () => {
     ]);
     const derivedResultReplay = await db.selectFrom("casts").selectAll().where("fid", "=", fid).execute();
     expect(derivedResultReplay).toHaveLength(1);
+    expect(log.error).not.toHaveBeenCalled();
   });
 });

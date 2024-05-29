@@ -112,5 +112,6 @@ describe("on reaction event", () => {
       .where("targetCastFid", "=", targetFid)
       .execute();
     expect(reactionResultReplay).toHaveLength(1);
+    expect(log.error).not.toHaveBeenCalled();
   });
 });

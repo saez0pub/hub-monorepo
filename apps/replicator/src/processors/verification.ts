@@ -30,7 +30,7 @@ const { processAdd: processAddEthereum, processRemove } = buildAddRemoveMessageP
       protocol === Protocol.ETHEREUM ? bytesToHex(protocolAddressBytes) : base58.encode(protocolAddressBytes);
 
     return ({ eb, and }) => {
-      return and([eb(sql<string>`body ->> 'address'`, "=", protocolAddress), eb("fid", "=", message.data.fid)]);
+      return and([eb(sql`body`, "@>", `{"address":"${protocolAddress}"}`), eb("fid", "=", message.data.fid)]);
     };
   },
   async getDerivedRow(message, trx) {
