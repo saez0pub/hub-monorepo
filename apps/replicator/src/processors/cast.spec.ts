@@ -2,7 +2,7 @@ import { executeTx } from "../db";
 import { CastId, Factories, MessageType } from "@farcaster/core";
 import { log } from "../log";
 import { storeMessage } from "./index";
-import { cleanDB, db } from "../utils.specs";
+import { cleanDB, db } from "../utils.spec.helper";
 import { processCastAdd } from "./cast";
 
 jest.mock("bullmq", () => {

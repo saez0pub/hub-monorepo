@@ -3,7 +3,7 @@ import { processLinkAdd } from "./link";
 import { Factories, MessageType } from "@farcaster/core";
 import { log } from "../log";
 import { storeMessage } from "./index";
-import { cleanDB, db } from "../utils.specs";
+import { cleanDB, db } from "../utils.spec.helper";
 
 jest.mock("bullmq", () => {
   return {

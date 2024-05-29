@@ -1,10 +1,9 @@
 import { LinkAddMessage, LinkRemoveMessage, MessageType } from "@farcaster/hub-nodejs";
-import { Selectable, sql } from "kysely";
+import { Selectable } from "kysely";
 import { buildAddRemoveMessageProcessor } from "../messageProcessor.js";
-import { LinkRow, executeTakeFirst, Fid } from "../db.js";
+import { LinkRow, executeTakeFirst } from "../db.js";
 import { farcasterTimeToDate } from "../util.js";
 import { HubEventProcessingBlockedError } from "../error.js";
-import { ReactionType } from "@farcaster/core";
 
 const { processAdd, processRemove } = buildAddRemoveMessageProcessor<
   LinkAddMessage,
@@ -16,13 +15,11 @@ const { processAdd, processRemove } = buildAddRemoveMessageProcessor<
   removeMessageType: MessageType.LINK_REMOVE,
   withConflictId(message) {
     const { type, targetFid } = message.data.linkBody;
-    const bodySelector: {
-      type: string;
-      targetFid?: Fid;
-    } = { type };
-    if (targetFid) bodySelector.targetFid = targetFid;
-    return ({ eb, and }) => {
-      return and([eb("fid", "=", message.data.fid), eb(sql`body`, "@>", JSON.stringify(bodySelector))]);
+
+    return ({ and, eb, ref }) => {
+      const conditions = [eb("fid", "=", message.data.fid), eb(ref("body", "->>").key("type"), "=", type)];
+      if (targetFid) conditions.push(eb(ref("body", "->>").key("targetFid"), "=", targetFid.toString()));
+      return and(conditions);
     };
   },
   async getDerivedRow(message, trx) {
