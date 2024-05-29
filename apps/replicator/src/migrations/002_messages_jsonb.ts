@@ -17,10 +17,10 @@ export async function up(db: Kysely<any>): Promise<void> {
 
 // biome-ignore lint/suspicious/noExplicitAny: legacy code, avoid using ignore for new code
 export async function down(db: Kysely<any>): Promise<void> {
+  await db.schema.dropIndex("jean_messages_body").ifExists().execute();
   await db.schema
     .alterTable("messages")
     .alterColumn("body", (column) => column.setDataType("json"))
     .execute();
-  await db.schema.dropIndex("jean_messages_fid_type").execute();
-  await db.schema.dropIndex("jean_messages_body").execute();
+  await db.schema.dropIndex("jean_messages_fid_type").ifExists().execute();
 }

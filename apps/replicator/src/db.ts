@@ -415,7 +415,7 @@ export const getDbClient = (connectionString?: string) => {
 };
 
 // biome-ignore lint/suspicious/noExplicitAny: legacy code, avoid using ignore for new code
-const createMigrator = async (db: Kysely<any>, log: Logger) => {
+export const createMigrator = async (db: Kysely<any>, log: Logger) => {
   const migrator = new Migrator({
     db,
     provider: new FileMigrationProvider({

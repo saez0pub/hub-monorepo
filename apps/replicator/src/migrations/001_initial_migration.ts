@@ -572,7 +572,7 @@ export const up = async (db: Kysely<any>) => {
             .addPrimaryKeyConstraint("storage_allocations_pkey", ["id", "fid"])
             .modifyEnd(sql`PARTITION BY HASH (fid)`)
             .addForeignKeyConstraint(
-              "fids_chain_event_id_fid_foreign",
+              "storage_allocations_chain_event_id_fid_foreign",
               ["chainEventId", "fid"],
               "chainEvents",
               ["id", "fid"],
@@ -580,8 +580,12 @@ export const up = async (db: Kysely<any>) => {
             )
         : qb
             .addPrimaryKeyConstraint("storage_allocations_pkey", ["id"])
-            .addForeignKeyConstraint("fids_chain_event_id_foreign", ["chainEventId"], "chainEvents", ["id"], (cb) =>
-              cb.onDelete("cascade"),
+            .addForeignKeyConstraint(
+              "storage_allocations_chain_event_id_foreign",
+              ["chainEventId"],
+              "chainEvents",
+              ["id"],
+              (cb) => cb.onDelete("cascade"),
             ),
     )
     .execute();
@@ -610,4 +614,5 @@ export const down = async (db: Kysely<any>) => {
   await db.schema.dropTable("signers").ifExists().execute();
   await db.schema.dropTable("fids").ifExists().execute();
   await db.schema.dropTable("chainEvents").ifExists().execute();
+  await sql`DROP FUNCTION IF EXISTS generate_ulid()`.execute(db);
 };
