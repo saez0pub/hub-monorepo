@@ -88,7 +88,7 @@ describe("on verification event", () => {
       .execute();
     expect(messagesResultReplay).toHaveLength(1);
     expect(
-      messagesResult.map((message) => {
+      messagesResultReplay.map((message) => {
         return {
           fid: message.fid,
           body: {

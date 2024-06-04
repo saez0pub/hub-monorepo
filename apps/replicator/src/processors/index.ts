@@ -51,7 +51,7 @@ import { processCastAdd, processCastRemove } from "./cast.js";
 import { processReactionAdd, processReactionRemove } from "./reaction.js";
 import { processLinkAdd, processLinkRemove } from "./link.js";
 import { processVerificationAddEthAddress, processVerificationRemove } from "./verification.js";
-import { processUserDataAdd } from "./userData.js";
+import { processUserDataMessage } from "./userData.js";
 import { MergeMessage } from "../jobs/mergeMessage.js";
 import { statsd } from "../statsd.js";
 
@@ -182,7 +182,7 @@ export async function processMessage(
       case MessageType.USER_DATA_ADD:
         if (!isUserDataAddMessage(message)) throw new AssertionError(`Invalid UserDataAddMessage: ${message}`);
         log.debug(`Processing UserDataAddMessage ${hash} (fid ${fid})`, { fid, hash });
-        await processUserDataAdd(message, trx);
+        await processUserDataMessage(message, operation, trx);
         break;
       case MessageType.USERNAME_PROOF:
         if (!isUsernameProofMessage(message)) throw new AssertionError(`Invalid UsernameProofMessage: ${message}`);
